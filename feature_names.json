@@ -1,0 +1,17 @@
+[
+  "prev_price",
+  "cmname_encoded",
+  "category_encoded",
+  "unit_encoded",
+  "admname_encoded",
+  "mktname_encoded",
+  "year",
+  "month",
+  "day",
+  "day_of_week",
+  "quarter",
+  "sin_month",
+  "cos_month",
+  "is_year_end",
+  "is_year_start"
+]

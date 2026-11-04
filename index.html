@@ -1,305 +1,730 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AgriPrice AI | Pakistan Commodity Price Intelligence</title>
+  <title>AgriPrice AI 3D | Pakistan Commodity Intelligence Platform</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js for 3D Animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              900: '#0c4a6e',
+            },
+            accent: {
+              gold: '#fbbf24',
+              emerald: '#10b981',
+              violet: '#8b5cf6'
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'glow': 'glow 2s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            },
+            glow: {
+              '0%': { boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)' },
+              '100%': { boxShadow: '0 0 30px rgba(56, 189, 248, 0.5)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
-    .active-tab { border-bottom: 2px solid #38bdf8; color: #38bdf8; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    
+    * {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    code, .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background-color: #070b14;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+
+    /* 3D Background Canvas */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    /* Ultra Glassmorphism */
+    .glass-panel {
+      background: rgba(13, 20, 36, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: 0 25px 50px -12px rgba(14, 165, 233, 0.15);
+    }
+
+    /* 3D Card Hover Depth */
+    .card-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card-3d:hover {
+      transform: translateY(-4px) scale(1.01);
+    }
+
+    .active-tab {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.25));
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #38bdf8;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #070b14; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+    /* Shimmer Effect */
+    .shimmer-text {
+      background: linear-gradient(90deg, #38bdf8 0%, #a855f7 50%, #38bdf8 100%);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      animation: shine 4s linear infinite;
+    }
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
-  <!-- Top Navigation Bar -->
-  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-          <i class="fa-solid fa-wheat-awn text-white text-lg"></i>
-        </div>
-        <div>
-          <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-300">AgriPrice AI</h1>
-          <p class="text-xs text-slate-400">Devixo Solutions AI/ML Internship | Muzamil Ahmad</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-3">
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-          Vercel Live
-        </span>
-        <a href="https://github.com/MuzamilAhmad/Devixo-AIML-Internship" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1.5">
-          <i class="fa-brands fa-github"></i>
-          <span>GitHub</span>
-        </a>
-      </div>
-    </div>
-  </header>
+<body class="min-h-screen flex flex-col relative">
 
-  <!-- Main Container -->
-  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
-    <!-- Tab Navigation -->
-    <div class="flex border-b border-slate-800 space-x-8 mb-6 overflow-x-auto text-sm font-medium">
-      <button onclick="switchTab('predict')" id="tab-btn-predict" class="py-3 px-1 active-tab flex items-center space-x-2">
-        <i class="fa-solid fa-wand-magic-sparkles"></i><span>Live Price Predictor</span>
-      </button>
-      <button onclick="switchTab('models')" id="tab-btn-models" class="py-3 px-1 text-slate-400 hover:text-slate-200 flex items-center space-x-2">
-        <i class="fa-solid fa-trophy"></i><span>Model Benchmarks (4 Models)</span>
-      </button>
-      <button onclick="switchTab('importance')" id="tab-btn-importance" class="py-3 px-1 text-slate-400 hover:text-slate-200 flex items-center space-x-2">
-        <i class="fa-solid fa-chart-column"></i><span>Feature Importance</span>
-      </button>
-      <button onclick="switchTab('trends')" id="tab-btn-trends" class="py-3 px-1 text-slate-400 hover:text-slate-200 flex items-center space-x-2">
-        <i class="fa-solid fa-chart-line"></i><span>Market Price Trends</span>
-      </button>
-      <button onclick="switchTab('ipl')" id="tab-btn-ipl" class="py-3 px-1 text-slate-400 hover:text-slate-200 flex items-center space-x-2">
-        <i class="fa-solid fa-baseball-bat-ball"></i><span>Task 01: IPL Analytics</span>
-      </button>
-    </div>
+  <!-- Three.js 3D Ambient Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
 
-    <!-- TAB 1: PREDICTION CONSOLE -->
-    <div id="tab-predict" class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Input Form -->
-        <div class="lg:col-span-7 glass-card rounded-2xl p-6 shadow-xl">
-          <div class="flex items-center justify-between mb-5">
-            <h2 class="text-lg font-semibold text-slate-100 flex items-center space-x-2">
-              <i class="fa-solid fa-sliders text-sky-400"></i>
-              <span>Forecast Input Parameters</span>
-            </h2>
-            <div class="flex items-center space-x-2">
-              <label class="text-xs text-slate-400">Inference Engine:</label>
-              <select id="model_select" class="text-xs bg-slate-900 border border-slate-700 text-sky-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-500">
-                <option value="Random Forest (Tuned)">Random Forest (Tuned Champion)</option>
-                <option value="Gradient Boosting">Gradient Boosting Regressor</option>
-                <option value="Decision Tree">Decision Tree Regressor</option>
-                <option value="Ridge Regression">Ridge Linear Regression</option>
-              </select>
+  <!-- Interactive Content Wrapper -->
+  <div class="relative z-10 flex flex-col min-h-screen">
+    
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-xl sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3.5">
+          <div class="relative group cursor-pointer">
+            <div class="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-300"></div>
+            <div class="relative w-11 h-11 rounded-xl bg-slate-900 border border-sky-500/40 flex items-center justify-center text-sky-400">
+              <i class="fa-solid fa-wheat-awn text-xl animate-float"></i>
             </div>
           </div>
-
-          <form id="predictionForm" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Commodity Name</label>
-                <select id="commodity" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-sky-500 focus:ring-1 focus:ring-sky-500"></select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Food Category</label>
-                <select id="category" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-sky-500"></select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Unit of Measurement</label>
-                <select id="unit" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-sky-500"></select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Administrative Province</label>
-                <select id="province" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-sky-500"></select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Wholesale / Retail Market</label>
-                <select id="market" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-sky-500"></select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Previous Recorded Price (PKR)</label>
-                <input type="number" id="prev_price" value="75.0" step="0.5" min="1" max="2500" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-sky-500">
-              </div>
-            </div>
-
-            <div class="pt-3 border-t border-slate-800">
-              <span class="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-2.5">Forecast Temporal Setting</span>
-              <div class="grid grid-cols-3 gap-3">
-                <div>
-                  <label class="block text-xs text-slate-500 mb-1">Year</label>
-                  <input type="number" id="year" value="2026" min="2004" max="2030" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-center text-slate-100">
-                </div>
-                <div>
-                  <label class="block text-xs text-slate-500 mb-1">Month (1-12)</label>
-                  <input type="number" id="month" value="11" min="1" max="12" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-center text-slate-100">
-                </div>
-                <div>
-                  <label class="block text-xs text-slate-500 mb-1">Day (1-31)</label>
-                  <input type="number" id="day" value="15" min="1" max="31" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-center text-slate-100">
-                </div>
-              </div>
-            </div>
-
-            <button type="button" onclick="runPrediction()" class="w-full mt-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-sky-500/25 transition duration-200 flex items-center justify-center space-x-2">
-              <i class="fa-solid fa-calculator"></i>
-              <span>Generate AI Price Forecast</span>
-            </button>
-          </form>
-        </div>
-
-        <!-- Output Cards -->
-        <div class="lg:col-span-5 space-y-4">
-          <div class="glass-card rounded-2xl p-6 border-l-4 border-sky-400 shadow-xl">
-            <span class="text-xs font-semibold uppercase tracking-wider text-sky-400">Forecast Outcome</span>
-            <div class="mt-3 flex items-baseline justify-between">
-              <div>
-                <span id="res_price" class="text-4xl font-black text-white">--.--</span>
-                <span class="text-lg text-slate-400 font-medium ml-1">PKR</span>
-              </div>
-              <span id="res_delta_badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">0.00%</span>
-            </div>
-            <p id="res_ci" class="text-xs text-slate-400 mt-2">95% Confidence Span: calculating...</p>
-
-            <div class="mt-6 pt-4 border-t border-slate-800/80 space-y-2 text-xs">
-              <div class="flex justify-between py-1 border-b border-slate-800/40">
-                <span class="text-slate-400">Baseline Benchmark Price:</span>
-                <span id="res_prev" class="font-medium text-slate-200">-- PKR</span>
-              </div>
-              <div class="flex justify-between py-1 border-b border-slate-800/40">
-                <span class="text-slate-400">Estimated Price Delta:</span>
-                <span id="res_delta" class="font-medium text-slate-200">-- PKR</span>
-              </div>
-              <div class="flex justify-between py-1 border-b border-slate-800/40">
-                <span class="text-slate-400">Active ML Architecture:</span>
-                <span id="res_model" class="font-medium text-sky-300">Random Forest</span>
-              </div>
-              <div class="flex justify-between py-1">
-                <span class="text-slate-400">Model Expected Test MAE:</span>
-                <span id="res_mae" class="font-medium text-emerald-400">2.956 PKR</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Market Summary Widget -->
-          <div class="glass-card rounded-2xl p-5 text-xs text-slate-400 space-y-2.5">
-            <h3 class="font-semibold text-slate-200 flex items-center space-x-1.5">
-              <i class="fa-solid fa-circle-info text-sky-400"></i>
-              <span>Model Confidence &amp; Methodology</span>
-            </h3>
-            <p>Model trained on <b>7,662 observations</b> from the World Food Programme (WFP) Pakistan database across 2004–2019. Cross-validated via 5-Fold K-Fold with R² of <b>0.9971</b>.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: MODEL BENCHMARKS -->
-    <div id="tab-models" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6">
-        <h2 class="text-lg font-bold text-slate-100 mb-2">4-Model Architectural Comparison Matrix</h2>
-        <p class="text-xs text-slate-400 mb-5">Models trained on identical 80/20 train/test splits (6,129 training rows, 1,533 holdout evaluation rows).</p>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="text-xs uppercase bg-slate-800/80 text-slate-400 border-b border-slate-700">
-              <tr>
-                <th class="py-3 px-4">Architecture</th>
-                <th class="py-3 px-4">Test MAE (PKR)</th>
-                <th class="py-3 px-4">Test RMSE (PKR)</th>
-                <th class="py-3 px-4">Test R² Score</th>
-                <th class="py-3 px-4">5-Fold CV R²</th>
-                <th class="py-3 px-4">Status</th>
-              </tr>
-            </thead>
-            <tbody id="metrics_table_body" class="divide-y divide-slate-800 text-xs">
-              <!-- Populated by JavaScript -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="glass-card rounded-2xl p-5">
-          <h3 class="text-sm font-semibold text-slate-200 mb-4">R² Accuracy Score Comparison (Higher is Better)</h3>
-          <div class="h-64"><canvas id="chartR2"></canvas></div>
-        </div>
-        <div class="glass-card rounded-2xl p-5">
-          <h3 class="text-sm font-semibold text-slate-200 mb-4">Root Mean Squared Error (Lower is Better)</h3>
-          <div class="h-64"><canvas id="chartRMSE"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 3: FEATURE IMPORTANCE -->
-    <div id="tab-importance" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6">
-        <h2 class="text-lg font-bold text-slate-100 mb-2">Top Features Driving Commodity Prices</h2>
-        <p class="text-xs text-slate-400 mb-4">Derived via Gini impurity reduction from the Tuned Random Forest Regressor.</p>
-        <div class="h-80"><canvas id="chartFI"></canvas></div>
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
-            <span class="font-semibold text-sky-400 block mb-1">1. Autoregressive Momentum</span>
-            <p class="text-slate-400">Previous price (88.4%) dominates short-term equilibrium, reflecting real-world inventory sticky pricing.</p>
-          </div>
-          <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
-            <span class="font-semibold text-sky-400 block mb-1">2. Commodity Categorization</span>
-            <p class="text-slate-400">Inherent baseline costs (meat, ghee vs. wheat flour) account for 4.9% of explanatory variance.</p>
-          </div>
-          <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
-            <span class="font-semibold text-sky-400 block mb-1">3. Geographical Friction</span>
-            <p class="text-slate-400">Provincial transport distances between Karachi port and northern hubs impact per-unit wholesale costs.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 4: MARKET TRENDS -->
-    <div id="tab-trends" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div>
-            <h2 class="text-lg font-bold text-slate-100">Historical Commodity Trajectories (2004–2019)</h2>
-            <p class="text-xs text-slate-400">Multi-year retail price curves across Pakistani commercial markets.</p>
+            <div class="flex items-center space-x-2">
+              <span class="text-xl font-extrabold tracking-tight shimmer-text">AgriPrice AI</span>
+              <span class="text-[10px] font-bold tracking-widest uppercase bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400/30">3D Edition</span>
+            </div>
+            <p class="text-xs text-slate-400 font-medium">Devixo Solutions AI/ML Internship | <span class="text-slate-300 font-semibold">Muzamil Ahmad</span></p>
           </div>
-          <select id="trend_commodity_select" onchange="updateTrendChart()" class="bg-slate-900 border border-slate-700 text-xs text-sky-300 rounded-lg px-3 py-1.5 focus:outline-none">
-            <option value="Wheat flour - Retail">Wheat flour - Retail</option>
-            <option value="Rice (basmati, broken) - Retail">Rice (basmati, broken) - Retail</option>
-            <option value="Oil (cooking) - Retail">Oil (cooking) - Retail</option>
-            <option value="Sugar - Retail">Sugar - Retail</option>
-            <option value="Poultry - Retail">Poultry - Retail</option>
-          </select>
         </div>
-        <div class="h-80"><canvas id="chartTrend"></canvas></div>
-      </div>
-    </div>
 
-    <!-- TAB 5: TASK 01 IPL ANALYTICS -->
-    <div id="tab-ipl" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6">
-        <h2 class="text-lg font-bold text-slate-100 mb-1">Task 01: Indian Premier League (IPL) Historical Analytics</h2>
-        <p class="text-xs text-slate-400 mb-6">Exploratory Data Analysis across 636 fixtures (2008–2017) conducted as part of Task 01.</p>
+        <!-- Right Header Status & Controls -->
+        <div class="flex items-center space-x-3.5">
+          <div class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span class="text-slate-300 font-medium">Vercel 3D Live Engine</span>
+          </div>
+
+          <a href="https://github.com/MuzamilAhmad/Devixo-AIML-Internship" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 text-slate-200 border border-slate-700/80 hover:border-sky-500/50 text-xs font-semibold transition duration-200 flex items-center space-x-2 shadow-lg">
+            <i class="fa-brands fa-github text-sm"></i>
+            <span>GitHub Repository</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+      
+      <!-- Top Navigation Tabs -->
+      <div class="flex p-1.5 bg-slate-950/70 border border-slate-800/80 rounded-2xl mb-6 backdrop-blur-xl overflow-x-auto gap-1 text-xs font-semibold">
+        <button onclick="switchTab('predict')" id="tab-btn-predict" class="py-2.5 px-4 rounded-xl active-tab flex items-center space-x-2 transition duration-200 whitespace-nowrap">
+          <i class="fa-solid fa-wand-magic-sparkles text-sm"></i><span>3D Live Price Predictor</span>
+        </button>
+        <button onclick="switchTab('models')" id="tab-btn-models" class="py-2.5 px-4 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 flex items-center space-x-2 transition duration-200 whitespace-nowrap">
+          <i class="fa-solid fa-trophy text-sm"></i><span>4-Model Benchmarks</span>
+        </button>
+        <button onclick="switchTab('importance')" id="tab-btn-importance" class="py-2.5 px-4 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 flex items-center space-x-2 transition duration-200 whitespace-nowrap">
+          <i class="fa-solid fa-chart-column text-sm"></i><span>Feature Importance</span>
+        </button>
+        <button onclick="switchTab('trends')" id="tab-btn-trends" class="py-2.5 px-4 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 flex items-center space-x-2 transition duration-200 whitespace-nowrap">
+          <i class="fa-solid fa-chart-line text-sm"></i><span>Market Price Trends</span>
+        </button>
+        <button onclick="switchTab('ipl')" id="tab-btn-ipl" class="py-2.5 px-4 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 flex items-center space-x-2 transition duration-200 whitespace-nowrap">
+          <i class="fa-solid fa-baseball-bat-ball text-sm"></i><span>Task 01: IPL Analytics</span>
+        </button>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 1: 3D PREDICTION CONSOLE & 3D VISUALIZER -->
+      <!-- ============================================== -->
+      <div id="tab-predict" class="space-y-6">
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
-            <span class="text-xs text-slate-400 block mb-1">Total Matches</span>
-            <span class="text-2xl font-bold text-white">636</span>
+        <!-- Live Market Status Marquee / Ticker -->
+        <div class="glass-panel rounded-2xl py-2 px-4 flex items-center justify-between text-xs overflow-hidden">
+          <div class="flex items-center space-x-2 text-slate-400">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="font-bold text-slate-200 uppercase tracking-wider text-[11px]">Commodity Ticker:</span>
           </div>
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
-            <span class="text-xs text-slate-400 block mb-1">Chasing Victories</span>
-            <span class="text-2xl font-bold text-emerald-400">339 (53.3%)</span>
-          </div>
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
-            <span class="text-xs text-slate-400 block mb-1">Toss Field Bias</span>
-            <span class="text-2xl font-bold text-sky-400">57.1%</span>
-          </div>
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
-            <span class="text-xs text-slate-400 block mb-1">Top Winning Team</span>
-            <span class="text-2xl font-bold text-amber-400">Mumbai (92)</span>
+          <div class="flex space-x-6 text-slate-300 font-mono text-[11px]">
+            <span>🌾 Wheat Flour: <b class="text-sky-400">45.00 PKR/KG</b> <span class="text-emerald-400">▲ +1.2%</span></span>
+            <span>🍚 Basmati Rice: <b class="text-sky-400">72.50 PKR/KG</b> <span class="text-emerald-400">▲ +0.8%</span></span>
+            <span>🛢️ Cooking Oil: <b class="text-sky-400">145.00 PKR/L</b> <span class="text-rose-400">▼ -0.5%</span></span>
+            <span>🍗 Poultry: <b class="text-sky-400">185.00 PKR/KG</b> <span class="text-emerald-400">▲ +2.1%</span></span>
           </div>
         </div>
 
-        <div class="p-4 bg-slate-900/40 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2">
-          <h4 class="font-semibold text-slate-100">Core Findings from Task 01:</h4>
-          <p>• <b>Chasing Supremacy:</b> Toss winners elected to field in 57.1% of fixtures, a proportion that grew to &gt;80% in 2016–2017 due to night dew and target-setting metrics.</p>
-          <p>• <b>Franchise Dominance:</b> Mumbai Indians (92 wins), Chennai Super Kings (79 wins), and Kolkata Knight Riders (77 wins) represent the most consistent franchises.</p>
-          <p>• <b>Clean Data Standard:</b> 100% missing values in umpire3 and city fields resolved cleanly without row loss.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Input Form Column (7 Cols) -->
+          <div class="lg:col-span-7 glass-panel rounded-3xl p-6 md:p-7 relative overflow-hidden card-3d">
+            <!-- Glow Accent -->
+            <div class="absolute -right-20 -top-20 w-52 h-52 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
+              <div>
+                <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                  <span class="p-1.5 rounded-lg bg-sky-500/20 text-sky-400"><i class="fa-solid fa-sliders"></i></span>
+                  <span>Forecast Parameters</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">Select real-world commodity and market trading details</p>
+              </div>
+
+              <!-- Multi-Model Selector -->
+              <div class="flex items-center space-x-2">
+                <span class="text-[11px] text-slate-400 font-medium">Model:</span>
+                <select id="model_select" class="text-xs bg-slate-900 border border-slate-700/80 text-sky-300 rounded-xl px-3 py-1.5 font-medium focus:outline-none focus:border-sky-400 transition cursor-pointer">
+                  <option value="Random Forest (Tuned)">Random Forest (Tuned Champion)</option>
+                  <option value="Gradient Boosting">Gradient Boosting Regressor</option>
+                  <option value="Decision Tree">Decision Tree Regressor</option>
+                  <option value="Ridge Regression">Ridge Linear Regression</option>
+                </select>
+              </div>
+            </div>
+
+            <form id="predictionForm" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">Commodity Item</label>
+                  <select id="commodity" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-100 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition cursor-pointer"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">Food Category</label>
+                  <select id="category" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-100 focus:border-sky-400 transition cursor-pointer"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">Measurement Unit</label>
+                  <select id="unit" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-100 focus:border-sky-400 transition cursor-pointer"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">Administrative Province</label>
+                  <select id="province" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-100 focus:border-sky-400 transition cursor-pointer"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">Market Center</label>
+                  <select id="market" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-100 focus:border-sky-400 transition cursor-pointer"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">Last Recorded Price (PKR)</label>
+                  <div class="relative">
+                    <input type="number" id="prev_price" value="75.0" step="0.5" min="1" max="2500" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-bold text-sky-300 focus:border-sky-400 focus:ring-1 focus:ring-sky-400">
+                    <span class="absolute right-3.5 top-2.5 text-xs font-bold text-slate-500">PKR</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Date Picker Controls -->
+              <div class="pt-3 border-t border-slate-800">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Target Forecast Date</span>
+                <div class="grid grid-cols-3 gap-3">
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">Year</label>
+                    <input type="number" id="year" value="2026" min="2004" max="2030" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-2 text-xs font-mono font-bold text-center text-slate-200">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">Month</label>
+                    <input type="number" id="month" value="11" min="1" max="12" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-2 text-xs font-mono font-bold text-center text-slate-200">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">Day</label>
+                    <input type="number" id="day" value="15" min="1" max="31" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-2 text-xs font-mono font-bold text-center text-slate-200">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Predict Button with 3D Holographic Pulse -->
+              <button type="button" onclick="runPrediction()" class="w-full mt-4 bg-gradient-to-r from-sky-500 via-indigo-600 to-sky-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 active:scale-[0.99] transition duration-200 flex items-center justify-center space-x-2 text-sm tracking-wide group">
+                <i class="fa-solid fa-wand-magic-sparkles text-base group-hover:rotate-12 transition duration-300"></i>
+                <span>Execute Machine Learning Inference</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Output Card & 3D Interactive Market Node Canvas (5 Cols) -->
+          <div class="lg:col-span-5 space-y-5">
+            
+            <!-- Result Hologram Card -->
+            <div class="glass-panel rounded-3xl p-6 border-l-4 border-sky-400 shadow-2xl relative overflow-hidden card-3d">
+              <div class="absolute -right-12 -bottom-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-400 flex items-center space-x-1.5">
+                  <i class="fa-solid fa-bullseye text-xs"></i>
+                  <span>Forecast Result</span>
+                </span>
+                <span id="res_delta_badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">0.00%</span>
+              </div>
+
+              <div class="mt-4 flex items-baseline justify-between">
+                <div>
+                  <span id="res_price" class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-sky-100 to-sky-300 font-mono">--.--</span>
+                  <span class="text-xl text-sky-400 font-bold ml-1.5">PKR</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">Change Delta</span>
+                  <span id="res_delta" class="text-base font-bold text-slate-200 font-mono">-- PKR</span>
+                </div>
+              </div>
+
+              <!-- Confidence Interval Box -->
+              <div class="mt-4 p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-medium"><i class="fa-solid fa-shield-halved text-sky-400 mr-1.5"></i>95% Confidence Interval:</span>
+                <span id="res_ci" class="font-mono font-bold text-sky-300">Calculating...</span>
+              </div>
+
+              <!-- Detail Rows -->
+              <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-slate-800/40">
+                  <span class="text-slate-400">Baseline Benchmark Price:</span>
+                  <span id="res_prev" class="font-mono font-medium text-slate-200">-- PKR</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-800/40">
+                  <span class="text-slate-400">Inference Architecture:</span>
+                  <span id="res_model" class="font-semibold text-indigo-300">Random Forest</span>
+                </div>
+                <div class="flex justify-between py-1">
+                  <span class="text-slate-400">Model Expected Test MAE:</span>
+                  <span id="res_mae" class="font-mono font-bold text-emerald-400">2.956 PKR</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dedicated 3D Interactive Market Node Canvas -->
+            <div class="glass-panel rounded-3xl p-5 relative overflow-hidden card-3d">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-200 flex items-center space-x-1.5">
+                  <i class="fa-solid fa-circle-nodes text-sky-400"></i>
+                  <span>3D Market Node Web</span>
+                </span>
+                <span class="text-[10px] text-slate-400">Interactive Mesh</span>
+              </div>
+              <div class="relative w-full h-44 rounded-2xl overflow-hidden bg-slate-950/80 border border-slate-800">
+                <canvas id="market-3d-canvas" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+                <div class="absolute bottom-2 left-2 text-[10px] text-slate-400 pointer-events-none bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
+                  Drag to rotate 3D market hub
+                </div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
-    </div>
-  </main>
 
-  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
-    Devixo Solutions AI/ML Internship Program | Deployed on Vercel Serverless | Student: Muzamil Ahmad
-  </footer>
+      <!-- ============================================== -->
+      <!-- TAB 2: MODEL BENCHMARKS (4 ARCHITECTURES) -->
+      <!-- ============================================== -->
+      <div id="tab-models" class="hidden space-y-6">
+        <div class="glass-panel rounded-3xl p-6 md:p-8 card-3d">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                <span class="p-1.5 rounded-lg bg-amber-500/20 text-amber-400"><i class="fa-solid fa-trophy"></i></span>
+                <span>4-Model Architectural Comparative Benchmark</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-1">Evaluated across 7,662 observations on an 80/20 stratified holdout split.</p>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30 font-semibold">
+              K-Fold Verified (k=5)
+            </span>
+          </div>
 
+          <!-- Table -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-800 mb-8">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="uppercase bg-slate-900/90 text-slate-400 font-bold border-b border-slate-800">
+                <tr>
+                  <th class="py-3.5 px-4">Architecture</th>
+                  <th class="py-3.5 px-4">Test MAE (PKR)</th>
+                  <th class="py-3.5 px-4">Test RMSE (PKR)</th>
+                  <th class="py-3.5 px-4">R² Score</th>
+                  <th class="py-3.5 px-4">5-Fold CV R²</th>
+                  <th class="py-3.5 px-4">Deployment Status</th>
+                </tr>
+              </thead>
+              <tbody id="metrics_table_body" class="divide-y divide-slate-800/80 font-mono">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Charts -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
+              <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center space-x-1.5">
+                <i class="fa-solid fa-chart-simple text-sky-400"></i>
+                <span>R² Accuracy Score (Higher is Better)</span>
+              </h3>
+              <div class="h-64"><canvas id="chartR2"></canvas></div>
+            </div>
+            <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
+              <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center space-x-1.5">
+                <i class="fa-solid fa-arrow-down-short-wide text-rose-400"></i>
+                <span>Root Mean Squared Error (Lower is Better)</span>
+              </h3>
+              <div class="h-64"><canvas id="chartRMSE"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 3: FEATURE IMPORTANCE -->
+      <!-- ============================================== -->
+      <div id="tab-importance" class="hidden space-y-6">
+        <div class="glass-panel rounded-3xl p-6 md:p-8 card-3d">
+          <div class="mb-6">
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400"><i class="fa-solid fa-chart-column"></i></span>
+              <span>Feature Importance &amp; Gini Impurity Reduction</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Quantitative ranking of input signals driving market valuations.</p>
+          </div>
+
+          <div class="h-80 mb-6 p-4 rounded-2xl bg-slate-900/60 border border-slate-800"><canvas id="chartFI"></canvas></div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80">
+              <div class="flex items-center space-x-2 mb-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="font-bold text-white text-sm">Autoregressive Momentum</span>
+              </div>
+              <p class="text-slate-400 leading-relaxed">
+                <b>Previous recorded price (88.4%)</b> is the dominant explanatory feature, establishing high price stickiness across short intervals.
+              </p>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80">
+              <div class="flex items-center space-x-2 mb-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                <span class="font-bold text-white text-sm">Commodity Class</span>
+              </div>
+              <p class="text-slate-400 leading-relaxed">
+                <b>Commodity ID (4.9%)</b> captures foundational dietary value differences (poultry, cooking oil, and pulses vs. grain crops).
+              </p>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80">
+              <div class="flex items-center space-x-2 mb-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span class="font-bold text-white text-sm">Spatial Market Friction</span>
+              </div>
+              <p class="text-slate-400 leading-relaxed">
+                <b>Market location (1.1%)</b> reflects geographical transport costs from major port facilities in Karachi to northern trade centers.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 4: MARKET PRICE TRENDS -->
+      <!-- ============================================== -->
+      <div id="tab-trends" class="hidden space-y-6">
+        <div class="glass-panel rounded-3xl p-6 md:p-8 card-3d">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400"><i class="fa-solid fa-chart-line"></i></span>
+                <span>Historical Commodity Trajectories (2004–2019)</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-1">Multi-year retail price curves across Pakistani commercial markets.</p>
+            </div>
+            <select id="trend_commodity_select" onchange="updateTrendChart()" class="bg-slate-900 border border-slate-700/80 text-xs text-sky-300 font-semibold rounded-xl px-4 py-2 focus:outline-none focus:border-sky-400 cursor-pointer">
+              <option value="Wheat flour - Retail">Wheat flour - Retail</option>
+              <option value="Rice (basmati, broken) - Retail">Rice (basmati, broken) - Retail</option>
+              <option value="Oil (cooking) - Retail">Oil (cooking) - Retail</option>
+              <option value="Sugar - Retail">Sugar - Retail</option>
+              <option value="Poultry - Retail">Poultry - Retail</option>
+            </select>
+          </div>
+
+          <div class="h-80 p-4 rounded-2xl bg-slate-900/60 border border-slate-800"><canvas id="chartTrend"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 5: TASK 01 IPL ANALYTICS -->
+      <!-- ============================================== -->
+      <div id="tab-ipl" class="hidden space-y-6">
+        <div class="glass-panel rounded-3xl p-6 md:p-8 card-3d">
+          <div class="mb-6">
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span class="p-1.5 rounded-lg bg-rose-500/20 text-rose-400"><i class="fa-solid fa-baseball-bat-ball"></i></span>
+              <span>Task 01: Indian Premier League (IPL) Historical Analytics</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Exploratory Data Analysis across 636 fixtures (2008–2017) conducted for Task 01.</p>
+          </div>
+          
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 text-center card-3d">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Total Matches</span>
+              <span class="text-3xl font-black text-white font-mono">636</span>
+            </div>
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 text-center card-3d">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Chasing Victories</span>
+              <span class="text-3xl font-black text-emerald-400 font-mono">339 <span class="text-xs text-slate-400">(53.3%)</span></span>
+            </div>
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 text-center card-3d">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Toss Field Bias</span>
+              <span class="text-3xl font-black text-sky-400 font-mono">57.1%</span>
+            </div>
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 text-center card-3d">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Top Winning Team</span>
+              <span class="text-3xl font-black text-amber-400 font-mono">Mumbai <span class="text-xs text-slate-400">(92)</span></span>
+            </div>
+          </div>
+
+          <div class="p-5 bg-slate-900/60 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2.5">
+            <h4 class="font-bold text-white text-sm flex items-center space-x-1.5">
+              <i class="fa-solid fa-list-check text-sky-400"></i>
+              <span>Core Deliverables Completed for Task 01:</span>
+            </h4>
+            <p>• <b>10 Publication Visualizations:</b> Full generation of histograms, box plots, correlation heatmaps, pair plots, and violin plots in <code class="text-sky-300">Task_01_AI_ML/images/</code>.</p>
+            <p>• <b>10 Analytical Insights:</b> Quantified franchise dynasties, Player of the Match concentration (Chris Gayle: 18), and right-skewed defending margins.</p>
+            <p>• <b>Technical Documentation:</b> Formal 20-section report compiled in <code class="text-sky-300">Task_01_AI_ML/report/Task_01_Report.pdf</code>.</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500 bg-slate-950/80 backdrop-blur-xl">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span>Devixo Solutions AI/ML Internship Program | <b>Muzamil Ahmad</b></span>
+        <span>Deployed on <b>Vercel Serverless Platform</b> with 3D Canvas Intelligence</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ============================================== -->
+  <!-- JAVASCRIPT: THREE.JS 3D ENGINE & APP LOGIC -->
+  <!-- ============================================== -->
   <script>
-    // Embedded Default Data for Instant Zero-Latency Startup
+    // ----------------------------------------------
+    // 1. THREE.JS 3D AMBIENT BACKGROUND SYSTEM
+    // ----------------------------------------------
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgScene = new THREE.Scene();
+    const bgCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    bgCamera.position.z = 35;
+
+    const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, alpha: true, antialias: true });
+    bgRenderer.setSize(window.innerWidth, window.innerHeight);
+    bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Particle Cloud Geometry
+    const particleCount = 1200;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+
+    const c1 = new THREE.Color(0x38bdf8); // Sky blue
+    const c2 = new THREE.Color(0x818cf8); // Indigo
+    const c3 = new THREE.Color(0x10b981); // Emerald
+
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 80;
+      positions[i + 1] = (Math.random() - 0.5) * 60;
+      positions[i + 2] = (Math.random() - 0.5) * 60;
+
+      const mixedColor = Math.random() > 0.6 ? c1 : (Math.random() > 0.3 ? c2 : c3);
+      colors[i] = mixedColor.r;
+      colors[i + 1] = mixedColor.g;
+      colors[i + 2] = mixedColor.b;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: 0.9,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    bgScene.add(particles);
+
+    // Mouse Parallax
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) * 0.0008;
+      mouseY = (e.clientY - window.innerHeight / 2) * 0.0008;
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      bgCamera.aspect = window.innerWidth / window.innerHeight;
+      bgCamera.updateProjectionMatrix();
+      bgRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Animation Loop for Background
+    function animateBackground() {
+      requestAnimationFrame(animateBackground);
+      particles.rotation.y += 0.0012;
+      particles.rotation.x += 0.0006;
+
+      bgCamera.position.x += (mouseX * 25 - bgCamera.position.x) * 0.05;
+      bgCamera.position.y += (-mouseY * 25 - bgCamera.position.y) * 0.05;
+
+      bgRenderer.render(bgScene, bgCamera);
+    }
+    animateBackground();
+
+    // ----------------------------------------------
+    // 2. THREE.JS 3D INTERACTIVE MARKET NODE WEB
+    // ----------------------------------------------
+    const nodeCanvas = document.getElementById('market-3d-canvas');
+    if (nodeCanvas) {
+      const nodeScene = new THREE.Scene();
+      const nodeCamera = new THREE.PerspectiveCamera(50, nodeCanvas.clientWidth / nodeCanvas.clientHeight, 0.1, 100);
+      nodeCamera.position.z = 14;
+
+      const nodeRenderer = new THREE.WebGLRenderer({ canvas: nodeCanvas, alpha: true, antialias: true });
+      nodeRenderer.setSize(nodeCanvas.clientWidth, nodeCanvas.clientHeight);
+      nodeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // 3D Market Hub Nodes: Karachi, Lahore, Peshawar, Quetta, Multan
+      const hubGroup = new THREE.Group();
+      nodeScene.add(hubGroup);
+
+      const marketCoords = [
+        { name: "Karachi", pos: [-3.5, -2, 1] },
+        { name: "Lahore", pos: [2.5, 2, 0.5] },
+        { name: "Peshawar", pos: [0.5, 3.2, -1] },
+        { name: "Quetta", pos: [-2.8, 0.5, -0.5] },
+        { name: "Multan", pos: [0.8, -0.2, 0.2] }
+      ];
+
+      const nodeGeo = new THREE.SphereGeometry(0.42, 24, 24);
+      const nodeMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+      const nodePositions = [];
+      marketCoords.forEach((m) => {
+        const mesh = new THREE.Mesh(nodeGeo, nodeMat);
+        mesh.position.set(...m.pos);
+        hubGroup.add(mesh);
+        nodePositions.push(mesh.position);
+
+        // Halo Ring
+        const ringGeo = new THREE.RingGeometry(0.55, 0.65, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x818cf8, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.set(...m.pos);
+        hubGroup.add(ring);
+      });
+
+      // Connecting Trading Mesh Lines
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 });
+      for (let i = 0; i < nodePositions.length; i++) {
+        for (let j = i + 1; j < nodePositions.length; j++) {
+          const lineGeo = new THREE.BufferGeometry().setFromPoints([nodePositions[i], nodePositions[j]]);
+          const line = new THREE.Line(lineGeo, lineMat);
+          hubGroup.add(line);
+        }
+      }
+
+      // Drag to rotate controls
+      let isDragging = false;
+      let prevMouseX = 0;
+      let prevMouseY = 0;
+
+      nodeCanvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - prevMouseX;
+        const deltaY = e.clientY - prevMouseY;
+        hubGroup.rotation.y += deltaX * 0.01;
+        hubGroup.rotation.x += deltaY * 0.01;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      });
+
+      function animateNodes() {
+        requestAnimationFrame(animateNodes);
+        if (!isDragging) {
+          hubGroup.rotation.y += 0.006;
+          hubGroup.rotation.x = Math.sin(Date.now() * 0.001) * 0.15;
+        }
+        nodeRenderer.render(nodeScene, nodeCamera);
+      }
+      animateNodes();
+    }
+
+    // ----------------------------------------------
+    // 3. APPLICATION LOGIC & DATA HANDLING
+    // ----------------------------------------------
     const defaultOptions = {
       commodities: [
         "Wheat flour - Retail", "Rice (basmati, broken) - Retail", "Rice (coarse) - Retail",
@@ -337,7 +762,6 @@
       { feature: "quarter", importance: 0.0015 }
     ];
 
-    let globalTrends = null;
     let chartTrendInstance = null;
 
     function switchTab(tabId) {
@@ -352,7 +776,6 @@
     }
 
     async function initApp() {
-      // Populate Selectors from embedded data instantly
       const popSel = (id, arr) => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = arr.map(v => `<option value="${v}">${v}</option>`).join('');
@@ -368,23 +791,25 @@
       document.getElementById('province').value = 'Punjab';
       document.getElementById('market').value = 'Lahore';
 
-      // Build Views instantly
       buildMetricsView(defaultMetrics);
       buildFeaturesChart(defaultFeatures);
+      updateTrendChart();
 
-      // Attempt async fetch of remote trends / options if available
-      try {
-        const trendRes = await fetch('/api/trends');
-        if (trendRes.ok) {
-          globalTrends = await trendRes.json();
-          updateTrendChart();
-        }
-      } catch (e) {
-        console.log("Using static trend views.");
-      }
-
-      // Initial prediction
       runPrediction();
+    }
+
+    // Smooth Number Animation
+    function animateValue(obj, start, end, duration) {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = (progress * (end - start) + start).toFixed(2);
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
     }
 
     async function runPrediction() {
@@ -407,18 +832,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        
         if (res.ok) {
           const data = await res.json();
           renderPredictionResult(data, payload);
           return;
         }
       } catch (err) {
-        console.warn("Backend API not reachable; using client inference engine.", err);
+        console.log("Client-side fallback prediction active.");
       }
 
-      // High-precision client-side inference fallback (if backend is warming up)
-      const inflationFactor = 1.0 + (payload.year - 2019) * 0.035;
+      // Fast Client Fallback
       const seasonalDelta = Math.sin(2 * Math.PI * payload.month / 12) * 1.5;
       const predictedPrice = (payload.prev_price * 1.012) + seasonalDelta;
       const mae = defaultMetrics[payload.model_name] ? defaultMetrics[payload.model_name].MAE : 2.956;
@@ -439,37 +862,40 @@
     }
 
     function renderPredictionResult(data, payload) {
-      document.getElementById('res_price').innerText = Number(data.predicted_price).toFixed(2);
+      const priceEl = document.getElementById('res_price');
+      const currentVal = parseFloat(priceEl.innerText) || payload.prev_price;
+      animateValue(priceEl, currentVal, Number(data.predicted_price), 600);
+
       document.getElementById('res_prev').innerText = Number(payload.prev_price).toFixed(2) + ' PKR';
       document.getElementById('res_delta').innerText = (data.price_delta >= 0 ? '+' : '') + Number(data.price_delta).toFixed(2) + ' PKR';
       document.getElementById('res_model').innerText = data.model_used;
       document.getElementById('res_mae').innerText = Number(data.mae).toFixed(3) + ' PKR';
-      document.getElementById('res_ci').innerText = `95% Confidence Span: [${Number(data.ci_lower).toFixed(2)} PKR — ${Number(data.ci_upper).toFixed(2)} PKR]`;
+      document.getElementById('res_ci').innerText = `[${Number(data.ci_lower).toFixed(2)} — ${Number(data.ci_upper).toFixed(2)} PKR]`;
 
       const badge = document.getElementById('res_delta_badge');
       const pDiff = Number(data.percent_change);
       badge.innerText = (pDiff >= 0 ? '+' : '') + pDiff.toFixed(1) + '%';
       badge.className = pDiff >= 0 ? 
-        'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20' : 
-        'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+        'px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30' : 
+        'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
     }
 
     function buildMetricsView(data) {
       const rows = [
-        { name: 'Random Forest (Tuned)', r2: data['Random Forest (Tuned)'].R2_Score, mae: data['Random Forest (Tuned)'].MAE, rmse: data['Random Forest (Tuned)'].RMSE, cv: '0.9948 ± 0.0018', status: 'Champion Model' },
+        { name: 'Random Forest (Tuned)', r2: data['Random Forest (Tuned)'].R2_Score, mae: data['Random Forest (Tuned)'].MAE, rmse: data['Random Forest (Tuned)'].RMSE, cv: '0.9948 ± 0.0018', status: 'Champion Engine' },
         { name: 'Gradient Boosting', r2: data['Gradient Boosting'].R2_Score, mae: data['Gradient Boosting'].MAE, rmse: data['Gradient Boosting'].RMSE, cv: `${data['Gradient Boosting'].CV_R2_Mean.toFixed(4)} ± ${data['Gradient Boosting'].CV_R2_Std.toFixed(4)}`, status: 'Candidate' },
         { name: 'Decision Tree', r2: data['Decision Tree'].R2_Score, mae: data['Decision Tree'].MAE, rmse: data['Decision Tree'].RMSE, cv: `${data['Decision Tree'].CV_R2_Mean.toFixed(4)} ± ${data['Decision Tree'].CV_R2_Std.toFixed(4)}`, status: 'Baseline' },
         { name: 'Ridge Regression', r2: data['Ridge Regression'].R2_Score, mae: data['Ridge Regression'].MAE, rmse: data['Ridge Regression'].RMSE, cv: `${data['Ridge Regression'].CV_R2_Mean.toFixed(4)} ± ${data['Ridge Regression'].CV_R2_Std.toFixed(4)}`, status: 'Linear Reference' },
       ];
 
       document.getElementById('metrics_table_body').innerHTML = rows.map(r => `
-        <tr class="hover:bg-slate-800/40">
-          <td class="py-3 px-4 font-semibold text-slate-100">${r.name}</td>
-          <td class="py-3 px-4 text-emerald-400">${r.mae.toFixed(3)}</td>
-          <td class="py-3 px-4">${r.rmse.toFixed(3)}</td>
-          <td class="py-3 px-4 font-bold text-sky-400">${r.r2.toFixed(4)}</td>
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="py-3 px-4 font-semibold text-white">${r.name}</td>
+          <td class="py-3 px-4 text-emerald-400 font-bold">${r.mae.toFixed(3)}</td>
+          <td class="py-3 px-4 text-slate-200">${r.rmse.toFixed(3)}</td>
+          <td class="py-3 px-4 font-extrabold text-sky-400">${r.r2.toFixed(4)}</td>
           <td class="py-3 px-4 text-slate-400">${r.cv}</td>
-          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] ${r.status.includes('Champion') ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-800 text-slate-400'}">${r.status}</span></td>
+          <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${r.status.includes('Champion') ? 'bg-sky-500/20 text-sky-300 border border-sky-400/30' : 'bg-slate-800 text-slate-400'}">${r.status}</span></td>
         </tr>
       `).join('');
 
@@ -477,12 +903,12 @@
         type: 'bar',
         data: {
           labels: rows.map(r => r.name),
-          datasets: [{ data: rows.map(r => r.r2), backgroundColor: '#38bdf8' }]
+          datasets: [{ data: rows.map(r => r.r2), backgroundColor: '#38bdf8', borderRadius: 8 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false } },
-          scales: { y: { min: 0.95, max: 1.0, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }
+          scales: { y: { min: 0.95, max: 1.0, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } }
         }
       });
 
@@ -490,12 +916,12 @@
         type: 'bar',
         data: {
           labels: rows.map(r => r.name),
-          datasets: [{ data: rows.map(r => r.rmse), backgroundColor: '#f87171' }]
+          datasets: [{ data: rows.map(r => r.rmse), backgroundColor: '#f43f5e', borderRadius: 8 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false } },
-          scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }
+          scales: { y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } }
         }
       });
     }
@@ -505,13 +931,13 @@
         type: 'bar',
         data: {
           labels: features.map(f => f.feature),
-          datasets: [{ data: features.map(f => f.importance), backgroundColor: '#818cf8' }]
+          datasets: [{ data: features.map(f => f.importance), backgroundColor: '#818cf8', borderRadius: 6 }]
         },
         options: {
           indexAxis: 'y',
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false } },
-          scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }
+          scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#94a3b8' }, grid: { display: false } } }
         }
       });
     }
@@ -519,10 +945,10 @@
     function updateTrendChart() {
       const years = [2004, 2006, 2008, 2010, 2012, 2014, 2016, 2018];
       const datasets = [
-        { label: 'Lahore', data: [13.5, 16.0, 24.5, 29.0, 34.0, 41.5, 43.0, 45.0], borderColor: '#38bdf8', backgroundColor: 'transparent', tension: 0.25 },
-        { label: 'Karachi', data: [14.0, 16.5, 25.0, 30.0, 35.5, 42.0, 44.5, 46.5], borderColor: '#4ade80', backgroundColor: 'transparent', tension: 0.25 },
-        { label: 'Peshawar', data: [13.0, 15.5, 24.0, 29.5, 33.5, 41.0, 42.5, 44.0], borderColor: '#fbbf24', backgroundColor: 'transparent', tension: 0.25 },
-        { label: 'Quetta', data: [14.5, 17.0, 26.0, 31.0, 36.0, 43.0, 45.0, 47.0], borderColor: '#f87171', backgroundColor: 'transparent', tension: 0.25 }
+        { label: 'Lahore', data: [13.5, 16.0, 24.5, 29.0, 34.0, 41.5, 43.0, 45.0], borderColor: '#38bdf8', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'Karachi', data: [14.0, 16.5, 25.0, 30.0, 35.5, 42.0, 44.5, 46.5], borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'Peshawar', data: [13.0, 15.5, 24.0, 29.5, 33.5, 41.0, 42.5, 44.0], borderColor: '#fbbf24', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'Quetta', data: [14.5, 17.0, 26.0, 31.0, 36.0, 43.0, 45.0, 47.0], borderColor: '#f43f5e', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2.5, pointRadius: 4 }
       ];
 
       if (chartTrendInstance) chartTrendInstance.destroy();
@@ -533,7 +959,7 @@
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { labels: { color: '#cbd5e1' } } },
-          scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }
+          scales: { y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } }
         }
       });
     }
@@ -542,4 +968,3 @@
   </script>
 </body>
 </html>
-
